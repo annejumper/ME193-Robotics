@@ -6,20 +6,16 @@ A driving template built on the same pattern as
 
 - Joysticks drive the car tank-style (left stick = left wheel, right stick =
   right wheel).
-- The color sensor triggers an action when it sees a new color:
+- The color sensor spins the **left** motor of the Double Motor one full
+  turn when it sees a new color:
 
-| Color   | Action        |
-|---------|---------------|
-| Red     | stop          |
-| Green   | forward       |
-| Yellow  | slow forward  |
-| Magenta | reverse       |
-| Blue    | turn left 90° |
-| Purple  | turn right 90°|
-| Orange  | spin 180°     |
+| Color  | Action                            |
+|--------|-----------------------------------|
+| Blue   | left motor clockwise (360°)       |
+| Orange | left motor counterclockwise (360°)|
 
-Teal, White, Azure, and "No color" are empty — fill in the `Do...()`
-functions with whatever you want.
+Every other color is an empty `Do...()` function — fill them in with
+whatever you want. Change `LEFT_MOTOR_DEGREES` to turn more or less.
 
 ## Run
 

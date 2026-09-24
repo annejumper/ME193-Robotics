@@ -4,7 +4,8 @@ Install first:
 lelib.py is already in this folder, so no copying needed.
 
 Driving template: a Double Motor car steered with the controller joysticks
-(tank style), with a color sensor that triggers actions when it sees a color.
+(tank style), with a color sensor that spins the left motor on Blue
+(clockwise) and Orange (counterclockwise).
 Fill in / change the Do...() handler functions for whatever behavior you want.
 
 """
@@ -28,9 +29,7 @@ CONTROLLER_CARD_COLOR = le.LEGO_COLOR_ORANGE
 CONTROLLER_CARD_SERIAL = 7552
 
 POLL_DELAY_S = 0.1   # seconds between reads
-DRIVE_SPEED = 50     # speed used by the color actions (0-100)
-SLOW_SPEED = 25
-TURN_DEGREES = 90
+LEFT_MOTOR_DEGREES = 360  # how far the left motor turns on Blue/Orange
 
 
 
@@ -38,20 +37,20 @@ TURN_DEGREES = 90
 # Each one gets the double motor so it can move the car.
 
 def DoRed(dm):
-    print("red -> stop")
-    dm.stop()
+    pass
 
 
 
 def DoYellow(dm):
-    print("yellow -> slow forward")
-    dm.run(SLOW_SPEED)
+    pass
 
 
 
 def DoBlue(dm):
-    print("blue -> turn left")
-    dm.turn_left(TURN_DEGREES)
+    print("blue -> left motor clockwise")
+    dm.motor_run_for_degrees(degrees=LEFT_MOTOR_DEGREES,
+                             direction=le.MOTOR_MOVE_DIRECTION_CLOCKWISE,
+                             motor=le.MOTOR_LEFT)
 
 
 
@@ -61,14 +60,12 @@ def DoTeal(dm):
 
 
 def DoGreen(dm):
-    print("green -> forward")
-    dm.run(DRIVE_SPEED)
+    pass
 
 
 
 def DoPurple(dm):
-    print("purple -> turn right")
-    dm.turn_right(TURN_DEGREES)
+    pass
 
 
 
@@ -78,14 +75,15 @@ def DoWhite(dm):
 
 
 def DoMagenta(dm):
-    print("magenta -> reverse")
-    dm.run(-DRIVE_SPEED)
+    pass
 
 
 
 def DoOrange(dm):
-    print("orange -> spin around")
-    dm.turn_right(180)
+    print("orange -> left motor counterclockwise")
+    dm.motor_run_for_degrees(degrees=LEFT_MOTOR_DEGREES,
+                             direction=le.MOTOR_MOVE_DIRECTION_COUNTERCLOCKWISE,
+                             motor=le.MOTOR_LEFT)
 
 
 
