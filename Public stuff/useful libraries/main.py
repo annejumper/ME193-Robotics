@@ -8,7 +8,7 @@ Then copy lelib.py from the SimpleLE repo into this project's folder.
 import time
 
 import legoeducation as le
-from lelib import colorSensor, controller
+from lelib import colorSensor, controller, doubleMotor
 
 # --- Bluetooth card info for your hardware -------------------------------
 # Fill these in with the color/serial printed on your LEGO connection card.
@@ -20,7 +20,15 @@ COLOR_SENSOR_CARD_SERIAL = 7552
 CONTROLLER_CARD_COLOR = le.LEGO_COLOR_ORANGE
 CONTROLLER_CARD_SERIAL = 7552
 
+DOUBLE_MOTOR_CARD_COLOR = le.LEGO_COLOR_ORANGE
+DOUBLE_MOTOR_CARD_SERIAL = 7552
+
+WIGGLE_DEGREES = 90  # how far each motor swings per stroke
+WIGGLE_SPEED = 50    # motor speed (%) for the orange wiggle
+
 POLL_DELAY_S = 0.1  # seconds between reads
+
+dm = None  # double motor, connected in main()
 
 
 
@@ -68,7 +76,20 @@ def DoMagenta():
 
 
 def DoOrange():
-    pass
+    # One back-and-forth cycle: the two motors turn 90 degrees in opposite
+    # directions, then swap. The main loop calls this again while the sensor
+    # still sees orange, so it keeps wiggling until orange is removed.
+    print("orange")
+    for left_dir, right_dir in (
+        (le.MOTOR_MOVE_DIRECTION_CLOCKWISE, le.MOTOR_MOVE_DIRECTION_COUNTERCLOCKWISE),
+        (le.MOTOR_MOVE_DIRECTION_COUNTERCLOCKWISE, le.MOTOR_MOVE_DIRECTION_CLOCKWISE),
+    ):
+        # Start the left motor without waiting, then block on the right so
+        # both sides move at the same time.
+        dm.motor_run_for_degrees(WIGGLE_DEGREES, direction=left_dir, motor=le.MOTOR_LEFT,
+                                 speed=WIGGLE_SPEED, blocking=False)
+        dm.motor_run_for_degrees(WIGGLE_DEGREES, direction=right_dir, motor=le.MOTOR_RIGHT,
+                                 speed=WIGGLE_SPEED, blocking=True)
 
 
 
@@ -186,11 +207,16 @@ def handle_controller(ctl):
 # --- Main loop -------------------------------------------------------------
 
 def main():
+    global dm
+
     sensor = colorSensor()
     sensor.connect(card_serial=COLOR_SENSOR_CARD_SERIAL, card_color=COLOR_SENSOR_CARD_COLOR)
 
     ctl = controller()
     ctl.connect(card_serial=CONTROLLER_CARD_SERIAL, card_color=CONTROLLER_CARD_COLOR)
+
+    dm = doubleMotor()
+    dm.connect(card_serial=DOUBLE_MOTOR_CARD_SERIAL, card_color=DOUBLE_MOTOR_CARD_COLOR)
 
     try:
         while True:
@@ -198,7 +224,7 @@ def main():
             handle_controller(ctl)
             time.sleep(POLL_DELAY_S)
     except KeyboardInterrupt:
-        pass
+        dm.stop()
 
 
 
