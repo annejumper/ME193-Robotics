@@ -8,7 +8,7 @@ Then copy lelib.py from the SimpleLE repo into this project's folder.
 import time
 
 import legoeducation as le
-from lelib import colorSensor, controller, doubleMotor
+from lelib import colorSensor, controller, doubleMotor, singleMotor
 
 # --- Bluetooth card info for your hardware -------------------------------
 # Fill these in with the color/serial printed on your LEGO connection card.
@@ -23,6 +23,9 @@ CONTROLLER_CARD_SERIAL = 6065
 DOUBLE_MOTOR_CARD_COLOR = le.LEGO_COLOR_PURPLE
 DOUBLE_MOTOR_CARD_SERIAL = 6065
 
+SINGLE_MOTOR_CARD_COLOR = le.LEGO_COLOR_PURPLE
+SINGLE_MOTOR_CARD_SERIAL = 6065
+
 
 
 POLL_DELAY_S = 0.1  # seconds between reads
@@ -32,8 +35,11 @@ WIGGLE_DEGREES = 45      # how far each side swings on yellow
 WIGGLE_SPEED = 50        # % speed for the yellow wiggle
 PURPLE_DEGREES = 90      # how far each side swings on purple
 PURPLE_SPEED = 50        # % speed for the purple wiggle
+SINGLE_MOTOR_SPEED = 50  # % speed for the left-stick single motor spin
 
 dm = doubleMotor()
+sm = singleMotor()
+sm_state = None  # "ccw", "cw" or "stopped": what the single motor was last told to do
 last_color = None  # color seen on the previous poll
 
 
@@ -129,18 +135,34 @@ def DoUnknownColor():
 
 
 
+def set_single_motor(state):
+    # Only send a command when the state changes, so holding the stick
+    # doesn't resend the same command every poll.
+    global sm_state
+    if state == sm_state:
+        return
+    if state == "ccw":
+        sm.motor_run(direction=le.MOTOR_MOVE_DIRECTION_COUNTERCLOCKWISE, speed=SINGLE_MOTOR_SPEED)
+    elif state == "cw":
+        sm.motor_run(direction=le.MOTOR_MOVE_DIRECTION_CLOCKWISE, speed=SINGLE_MOTOR_SPEED)
+    else:
+        sm.stop()
+    sm_state = state
+
+
+
 def DoLeftUp():
-    pass
+    set_single_motor("ccw")
 
 
 
 def DoLeftDown():
-    pass
+    set_single_motor("cw")
 
 
 
 def DoLeftReleased():
-    pass
+    set_single_motor("stopped")
 
 
 
@@ -238,6 +260,8 @@ def main():
 
     dm.connect(card_serial=DOUBLE_MOTOR_CARD_SERIAL, card_color=DOUBLE_MOTOR_CARD_COLOR)
 
+    sm.connect(card_serial=SINGLE_MOTOR_CARD_SERIAL, card_color=SINGLE_MOTOR_CARD_COLOR)
+
     try:
         while True:
             handle_color(sensor.detect_color())
@@ -245,6 +269,7 @@ def main():
             time.sleep(POLL_DELAY_S)
     except KeyboardInterrupt:
         dm.stop()
+        sm.stop()
 
 
 
