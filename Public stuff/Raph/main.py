@@ -3,8 +3,7 @@ Install first:
     pip install legoeducation
 lelib.py is already in this folder, so no copying needed.
 
-Driving template: a Double Motor car steered with the controller joysticks
-(tank style), with a color sensor that spins the left motor on Blue
+Color template: a color sensor spins the Double Motor's left motor on Blue
 (clockwise) and Orange (counterclockwise).
 Fill in / change the Do...() handler functions for whatever behavior you want.
 
@@ -13,7 +12,7 @@ Fill in / change the Do...() handler functions for whatever behavior you want.
 import time
 
 import legoeducation as le
-from lelib import colorSensor, controller, doubleMotor
+from lelib import colorSensor, doubleMotor
 
 # --- Bluetooth card info for your hardware -------------------------------
 # Fill these in with the color/serial printed on your LEGO connection card.
@@ -24,9 +23,6 @@ DOUBLE_MOTOR_CARD_SERIAL = 7552
 
 COLOR_SENSOR_CARD_COLOR = le.LEGO_COLOR_ORANGE
 COLOR_SENSOR_CARD_SERIAL = 7552
-
-CONTROLLER_CARD_COLOR = le.LEGO_COLOR_ORANGE
-CONTROLLER_CARD_SERIAL = 7552
 
 POLL_DELAY_S = 0.1   # seconds between reads
 LEFT_MOTOR_DEGREES = 360  # how far the left motor turns on Blue/Orange
@@ -102,19 +98,6 @@ def DoUnknownColor(dm):
 
 
 
-# --- Controller handler functions ------------------------------------------
-# Tank drive: left stick = left wheel, right stick = right wheel.
-
-def DoDrive(dm, left_speed, right_speed):
-    dm.movement_move_tank(left_speed, right_speed)
-
-
-
-def DoSticksReleased(dm):
-    pass
-
-
-
 # --- Dispatch helpers -------------------------------------------------
 
 def handle_color(dm, color_name):
@@ -147,15 +130,6 @@ def handle_color(dm, color_name):
 
 
 
-def handle_controller(dm, ctl):
-    """Joysticks drive the car; releasing both hands control back."""
-    if ctl.left_released() and ctl.right_released():
-        DoSticksReleased(dm)
-    else:
-        DoDrive(dm, ctl.left_position(), ctl.right_position())
-
-
-
 # --- Main loop -------------------------------------------------------------
 
 def main():
@@ -165,19 +139,15 @@ def main():
     sensor = colorSensor()
     sensor.connect(card_serial=COLOR_SENSOR_CARD_SERIAL, card_color=COLOR_SENSOR_CARD_COLOR)
 
-    ctl = controller()
-    ctl.connect(card_serial=CONTROLLER_CARD_SERIAL, card_color=CONTROLLER_CARD_COLOR)
-
     last_color = None
     try:
         while True:
-            # Only react when the color changes, so a turn doesn't repeat
+            # Only react when the color changes, so a spin doesn't repeat
             # every loop while the sensor sits on the same color.
             color = sensor.detect_color()
             if color != last_color:
                 handle_color(dm, color)
                 last_color = color
-            handle_controller(dm, ctl)
             time.sleep(POLL_DELAY_S)
     except KeyboardInterrupt:
         pass

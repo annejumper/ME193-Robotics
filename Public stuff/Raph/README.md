@@ -1,13 +1,11 @@
 # Raph
 
-A driving template built on the same pattern as
-[useful libraries/main.py](../useful%20libraries/main.py), for a car with a
-**Double Motor**, **Controller**, and **Color Sensor**.
+A color-sensor template built on the same pattern as
+[useful libraries/main.py](../useful%20libraries/main.py), using a
+**Double Motor** and a **Color Sensor**.
 
-- Joysticks drive the car tank-style (left stick = left wheel, right stick =
-  right wheel).
-- The color sensor spins the **left** motor of the Double Motor one full
-  turn when it sees a new color:
+The color sensor spins the **left** motor of the Double Motor one full turn
+when it sees a new color:
 
 | Color  | Action                            |
 |--------|-----------------------------------|
