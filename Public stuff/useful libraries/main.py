@@ -14,21 +14,27 @@ from lelib import colorSensor, controller, doubleMotor
 # Fill these in with the color/serial printed on your LEGO connection card.
 # Valid values: le.LEGO_COLOR_RED, _YELLOW, _BLUE, _GREEN, _PURPLE,
 # _MAGENTA, _AZURE, _ORANGE.
-COLOR_SENSOR_CARD_COLOR = le.LEGO_COLOR_ORANGE
-COLOR_SENSOR_CARD_SERIAL = 7552
+COLOR_SENSOR_CARD_COLOR = le.LEGO_COLOR_PURPLE
+COLOR_SENSOR_CARD_SERIAL = 6065
 
-CONTROLLER_CARD_COLOR = le.LEGO_COLOR_ORANGE
-CONTROLLER_CARD_SERIAL = 7552
+CONTROLLER_CARD_COLOR = le.LEGO_COLOR_PURPLE
+CONTROLLER_CARD_SERIAL = 6065
 
-DOUBLE_MOTOR_CARD_COLOR = le.LEGO_COLOR_ORANGE
-DOUBLE_MOTOR_CARD_SERIAL = 7552
+DOUBLE_MOTOR_CARD_COLOR = le.LEGO_COLOR_PURPLE
+DOUBLE_MOTOR_CARD_SERIAL = 6065
 
-WIGGLE_DEGREES = 90  # how far each motor swings per stroke
-WIGGLE_SPEED = 50    # motor speed (%) for the orange wiggle
+
 
 POLL_DELAY_S = 0.1  # seconds between reads
 
-dm = None  # double motor, connected in main()
+RED_SPEED = 100          # % speed for the red spin
+WIGGLE_DEGREES = 45      # how far each side swings on yellow
+WIGGLE_SPEED = 50        # % speed for the yellow wiggle
+ORANGE_DEGREES = 90      # how far each side swings on orange
+ORANGE_SPEED = 50        # % speed for the orange wiggle
+
+dm = doubleMotor()
+last_color = None  # color seen on the previous poll
 
 
 
@@ -37,11 +43,26 @@ dm = None  # double motor, connected in main()
 
 def DoRed():
     print("red")
+    dm.run(RED_SPEED)  # both sides full speed
 
 
 
 def DoYellow():
     print("yellow")
+    if last_color != "Yellow":
+        # just switched to yellow: stop and make this spot the center
+        dm.stop()
+        dm.set_speed_left(WIGGLE_SPEED)
+        dm.set_speed_right(WIGGLE_SPEED)
+        dm.motor_reset_relative_position()
+    # blocking=False starts the left side without waiting, so both sides
+    # move together; the right side's call waits for its move to finish.
+    # left forward, right back
+    dm.motor_run_to_relative_position(WIGGLE_DEGREES, motor=le.MOTOR_LEFT, blocking=False)
+    dm.motor_run_to_relative_position(-WIGGLE_DEGREES, motor=le.MOTOR_RIGHT)
+    # left back, right forward
+    dm.motor_run_to_relative_position(-WIGGLE_DEGREES, motor=le.MOTOR_LEFT, blocking=False)
+    dm.motor_run_to_relative_position(WIGGLE_DEGREES, motor=le.MOTOR_RIGHT)
 
 
 
@@ -86,10 +107,10 @@ def DoOrange():
     ):
         # Start the left motor without waiting, then block on the right so
         # both sides move at the same time.
-        dm.motor_run_for_degrees(WIGGLE_DEGREES, direction=left_dir, motor=le.MOTOR_LEFT,
-                                 speed=WIGGLE_SPEED, blocking=False)
-        dm.motor_run_for_degrees(WIGGLE_DEGREES, direction=right_dir, motor=le.MOTOR_RIGHT,
-                                 speed=WIGGLE_SPEED, blocking=True)
+        dm.motor_run_for_degrees(ORANGE_DEGREES, direction=left_dir, motor=le.MOTOR_LEFT,
+                                 speed=ORANGE_SPEED, blocking=False)
+        dm.motor_run_for_degrees(ORANGE_DEGREES, direction=right_dir, motor=le.MOTOR_RIGHT,
+                                 speed=ORANGE_SPEED, blocking=True)
 
 
 
@@ -99,7 +120,7 @@ def DoAzure():
 
 
 def DoNoColor():
-    pass
+    dm.stop()
 
 
 
@@ -142,6 +163,7 @@ def DoRightReleased():
 
 def handle_color(color_name):
     """Big switch statement on the color sensor's detected color."""
+    global last_color
     match color_name:
         case "Red":
             DoRed()
@@ -167,6 +189,7 @@ def handle_color(color_name):
             DoNoColor()
         case _:
             DoUnknownColor()
+    last_color = color_name
 
 
 
@@ -207,15 +230,12 @@ def handle_controller(ctl):
 # --- Main loop -------------------------------------------------------------
 
 def main():
-    global dm
-
     sensor = colorSensor()
     sensor.connect(card_serial=COLOR_SENSOR_CARD_SERIAL, card_color=COLOR_SENSOR_CARD_COLOR)
 
     ctl = controller()
     ctl.connect(card_serial=CONTROLLER_CARD_SERIAL, card_color=CONTROLLER_CARD_COLOR)
 
-    dm = doubleMotor()
     dm.connect(card_serial=DOUBLE_MOTOR_CARD_SERIAL, card_color=DOUBLE_MOTOR_CARD_COLOR)
 
     try:
