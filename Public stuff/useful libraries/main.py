@@ -8,19 +8,31 @@ Then copy lelib.py from the SimpleLE repo into this project's folder.
 import time
 
 import legoeducation as le
-from lelib import colorSensor, controller
+from lelib import colorSensor, controller, doubleMotor
 
 # --- Bluetooth card info for your hardware -------------------------------
 # Fill these in with the color/serial printed on your LEGO connection card.
 # Valid values: le.LEGO_COLOR_RED, _YELLOW, _BLUE, _GREEN, _PURPLE,
 # _MAGENTA, _AZURE, _ORANGE.
-COLOR_SENSOR_CARD_COLOR = le.LEGO_COLOR_ORANGE
-COLOR_SENSOR_CARD_SERIAL = 7552
+COLOR_SENSOR_CARD_COLOR = le.LEGO_COLOR_PURPLE
+COLOR_SENSOR_CARD_SERIAL = 6065
 
-CONTROLLER_CARD_COLOR = le.LEGO_COLOR_ORANGE
-CONTROLLER_CARD_SERIAL = 7552
+CONTROLLER_CARD_COLOR = le.LEGO_COLOR_PURPLE
+CONTROLLER_CARD_SERIAL = 6065
+
+DOUBLE_MOTOR_CARD_COLOR = le.LEGO_COLOR_PURPLE
+DOUBLE_MOTOR_CARD_SERIAL = 6065
+
+
 
 POLL_DELAY_S = 0.1  # seconds between reads
+
+RED_SPEED = 100          # % speed for the red spin
+WIGGLE_DEGREES = 45      # how far each side swings on yellow
+WIGGLE_SPEED = 50        # % speed for the yellow wiggle
+
+dm = doubleMotor()
+last_color = None  # color seen on the previous poll
 
 
 
@@ -29,11 +41,26 @@ POLL_DELAY_S = 0.1  # seconds between reads
 
 def DoRed():
     print("red")
+    dm.run(RED_SPEED)  # both sides full speed
 
 
 
 def DoYellow():
     print("yellow")
+    if last_color != "Yellow":
+        # just switched to yellow: stop and make this spot the center
+        dm.stop()
+        dm.set_speed_left(WIGGLE_SPEED)
+        dm.set_speed_right(WIGGLE_SPEED)
+        dm.motor_reset_relative_position()
+    # blocking=False starts the left side without waiting, so both sides
+    # move together; the right side's call waits for its move to finish.
+    # left forward, right back
+    dm.motor_run_to_relative_position(WIGGLE_DEGREES, motor=le.MOTOR_LEFT, blocking=False)
+    dm.motor_run_to_relative_position(-WIGGLE_DEGREES, motor=le.MOTOR_RIGHT)
+    # left back, right forward
+    dm.motor_run_to_relative_position(-WIGGLE_DEGREES, motor=le.MOTOR_LEFT, blocking=False)
+    dm.motor_run_to_relative_position(WIGGLE_DEGREES, motor=le.MOTOR_RIGHT)
 
 
 
@@ -78,7 +105,7 @@ def DoAzure():
 
 
 def DoNoColor():
-    pass
+    dm.stop()
 
 
 
@@ -121,6 +148,7 @@ def DoRightReleased():
 
 def handle_color(color_name):
     """Big switch statement on the color sensor's detected color."""
+    global last_color
     match color_name:
         case "Red":
             DoRed()
@@ -146,6 +174,7 @@ def handle_color(color_name):
             DoNoColor()
         case _:
             DoUnknownColor()
+    last_color = color_name
 
 
 
@@ -192,13 +221,15 @@ def main():
     ctl = controller()
     ctl.connect(card_serial=CONTROLLER_CARD_SERIAL, card_color=CONTROLLER_CARD_COLOR)
 
+    dm.connect(card_serial=DOUBLE_MOTOR_CARD_SERIAL, card_color=DOUBLE_MOTOR_CARD_COLOR)
+
     try:
         while True:
             handle_color(sensor.detect_color())
             handle_controller(ctl)
             time.sleep(POLL_DELAY_S)
     except KeyboardInterrupt:
-        pass
+        dm.stop()
 
 
 
