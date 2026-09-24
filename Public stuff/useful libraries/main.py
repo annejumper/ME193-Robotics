@@ -30,6 +30,8 @@ POLL_DELAY_S = 0.1  # seconds between reads
 RED_SPEED = 100          # % speed for the red spin
 WIGGLE_DEGREES = 45      # how far each side swings on yellow
 WIGGLE_SPEED = 50        # % speed for the yellow wiggle
+PURPLE_DEGREES = 90      # how far each side swings on purple
+PURPLE_SPEED = 50        # % speed for the purple wiggle
 
 dm = doubleMotor()
 last_color = None  # color seen on the previous poll
@@ -80,7 +82,20 @@ def DoGreen():
 
 
 def DoPurple():
-    pass
+    # One back-and-forth cycle: the two motors turn 90 degrees in opposite
+    # directions, then swap. The main loop calls this again while the sensor
+    # still sees purple, so it keeps wiggling until purple is removed.
+    print("purple")
+    for left_dir, right_dir in (
+        (le.MOTOR_MOVE_DIRECTION_CLOCKWISE, le.MOTOR_MOVE_DIRECTION_COUNTERCLOCKWISE),
+        (le.MOTOR_MOVE_DIRECTION_COUNTERCLOCKWISE, le.MOTOR_MOVE_DIRECTION_CLOCKWISE),
+    ):
+        # Start the left motor without waiting, then block on the right so
+        # both sides move at the same time.
+        dm.motor_run_for_degrees(PURPLE_DEGREES, direction=left_dir, motor=le.MOTOR_LEFT,
+                                 speed=PURPLE_SPEED, blocking=False)
+        dm.motor_run_for_degrees(PURPLE_DEGREES, direction=right_dir, motor=le.MOTOR_RIGHT,
+                                 speed=PURPLE_SPEED, blocking=True)
 
 
 
